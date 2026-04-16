@@ -1,13 +1,8 @@
-import express from 'express';
+import app from './app';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import helmet from 'helmet';
-import cors from 'cors';
 import path from 'path';
-import userRoutes from '../app/modules/user/routes/user.routes';
-import plantRoutes from '../app/modules/plant/routes/plant.routes';
 
-// ts-node __dirname = backend/src → go up one level to backend/
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const MONGO_URI = process.env.MONGO_URI;
@@ -24,28 +19,6 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
-const app = express();
-
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-
-// Root route
-app.get('/', (_req, res) => {
-  res.status(200).json({ success: true, message: 'Plant Rental Platform API' });
-});
-
-// Health check
-app.get('/health', (_req, res) => {
-  res.status(200).json({ success: true, message: 'Server is running' });
-});
-
-// API routes
-app.use('/api/auth', userRoutes);
-app.use('/api/plants', plantRoutes);
-
-// Connect to MongoDB and start server
 mongoose
   .connect(MONGO_URI as string)
   .then(() => {
@@ -58,5 +31,3 @@ mongoose
     console.error('MongoDB connection error:', err.message);
     process.exit(1);
   });
-
-export default app;
