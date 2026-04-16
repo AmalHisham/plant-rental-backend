@@ -198,7 +198,7 @@ export const updateUserStatus = async (id: string, isActive: boolean): Promise<I
   const user = await User.findOneAndUpdate(
     { _id: id, isDeleted: false },
     { isActive },
-    { new: true }
+    { returnDocument: 'after' }
   ).select('-password -passwordResetToken -passwordResetExpires -refreshToken');
   if (!user) throw new AppError('User not found', 404);
   return user;
