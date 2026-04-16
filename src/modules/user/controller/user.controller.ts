@@ -7,6 +7,10 @@ import {
   resetPassword,
   refreshAccessToken,
   logoutUser,
+  getAllUsers,
+  getUserById,
+  updateUserStatus,
+  softDeleteUser,
 } from '../service/user.service';
 import { AuthRequest } from '../../../middlewares/auth.middleware';
 
@@ -99,4 +103,70 @@ export const refreshTokenHandler = async (req: Request, res: Response): Promise<
 export const logoutHandler = async (req: AuthRequest, res: Response): Promise<void> => {
   await logoutUser(req.user!.id);
   res.status(200).json({ success: true, message: 'Logged out successfully' });
+};
+
+// ─── User Management Schemas ──────────────────────────────────────────────────
+
+const getAllUsersQuerySchema = Joi.object({
+  role: Joi.string().valid('user', 'super_admin', 'product_admin', 'order_admin', 'delivery_admin', 'user_admin'),
+  isActive: Joi.boolean(),
+  isDeleted: Joi.boolean(),
+  search: Joi.string().max(100),
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+}).options({ convert: true });
+
+const userIdParamsSchema = Joi.object({
+  id: Joi.string().required(),
+}).required();
+
+const updateStatusSchema = Joi.object({
+  isActive: Joi.boolean().required(),
+}).required();
+
+// ─── User Management Handlers ─────────────────────────────────────────────────
+
+export const getAllUsersHandler = async (req: Request, res: Response): Promise<void> => {
+  const { error, value } = getAllUsersQuerySchema.validate(req.query);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const result = await getAllUsers(value);
+  res.status(200).json({ success: true, data: result });
+};
+
+export const getUserByIdHandler = async (req: Request, res: Response): Promise<void> => {
+  const { error, value } = userIdParamsSchema.validate(req.params);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const user = await getUserById(value.id);
+  res.status(200).json({ success: true, data: { user } });
+};
+
+export const updateUserStatusHandler = async (req: Request, res: Response): Promise<void> => {
+  const { error: paramsError, value: params } = userIdParamsSchema.validate(req.params);
+  if (paramsError) {
+    res.status(400).json({ success: false, message: paramsError.details[0].message });
+    return;
+  }
+  const { error, value } = updateStatusSchema.validate(req.body);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const user = await updateUserStatus(params.id, value.isActive);
+  res.status(200).json({ success: true, data: { user } });
+};
+
+export const deleteUserHandler = async (req: Request, res: Response): Promise<void> => {
+  const { error, value } = userIdParamsSchema.validate(req.params);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  await softDeleteUser(value.id);
+  res.status(200).json({ success: true, message: 'User deleted successfully' });
 };

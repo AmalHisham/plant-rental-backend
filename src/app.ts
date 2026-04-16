@@ -1,7 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import userRoutes from './modules/user/routes/user.routes';
+import userRoutes, { usersRouter } from './modules/user/routes/user.routes';
 import plantRoutes from './modules/plant/routes/plant.routes';
 import orderRoutes from './modules/order/routes/order.routes';
 import { errorHandler } from './middlewares/error.middleware';
@@ -21,6 +21,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/auth', userRoutes);
+app.use('/api/users', usersRouter);
 app.use('/api/plants', plantRoutes);
 app.use('/api/orders', orderRoutes);
 

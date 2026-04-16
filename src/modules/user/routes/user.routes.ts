@@ -6,9 +6,13 @@ import {
   resetPasswordHandler,
   refreshTokenHandler,
   logoutHandler,
+  getAllUsersHandler,
+  getUserByIdHandler,
+  updateUserStatusHandler,
+  deleteUserHandler,
 } from '../controller/user.controller';
 import { catchAsync } from '../../../utils/catchAsync';
-import { protect } from '../../../middlewares/auth.middleware';
+import { protect, authorizeRoles } from '../../../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -20,3 +24,35 @@ router.post('/refresh-token', catchAsync(refreshTokenHandler));
 router.post('/logout', protect, catchAsync(logoutHandler));
 
 export default router;
+
+// ─── User Management Router (/api/users) ─────────────────────────────────────
+
+export const usersRouter = Router();
+
+usersRouter.get(
+  '/',
+  protect,
+  authorizeRoles('super_admin', 'user_admin'),
+  catchAsync(getAllUsersHandler)
+);
+
+usersRouter.get(
+  '/:id',
+  protect,
+  authorizeRoles('super_admin', 'user_admin'),
+  catchAsync(getUserByIdHandler)
+);
+
+usersRouter.patch(
+  '/:id/status',
+  protect,
+  authorizeRoles('super_admin', 'user_admin'),
+  catchAsync(updateUserStatusHandler)
+);
+
+usersRouter.delete(
+  '/:id',
+  protect,
+  authorizeRoles('super_admin'),
+  catchAsync(deleteUserHandler)
+);

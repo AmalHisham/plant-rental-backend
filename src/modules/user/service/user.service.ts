@@ -146,3 +146,70 @@ export const logoutUser = async (userId: string): Promise<void> => {
 export const findUserById = async (id: string): Promise<IUser | null> => {
   return User.findOne({ _id: id, isDeleted: false }).select('-password -passwordResetToken -passwordResetExpires');
 };
+
+// ─── Get All Users ────────────────────────────────────────────────────────────
+
+export const getAllUsers = async (filters: {
+  role?: string;
+  isActive?: boolean;
+  isDeleted?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ users: Partial<IUser>[]; total: number; page: number; totalPages: number }> => {
+  const { role, isActive, isDeleted = false, search, page = 1, limit = 10 } = filters;
+
+  const query: Record<string, unknown> = { isDeleted };
+  if (role) query.role = role;
+  if (isActive !== undefined) query.isActive = isActive;
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .select('-password -passwordResetToken -passwordResetExpires -refreshToken')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }),
+    User.countDocuments(query),
+  ]);
+
+  return { users, total, page, totalPages: Math.ceil(total / limit) };
+};
+
+// ─── Get User By ID ───────────────────────────────────────────────────────────
+
+export const getUserById = async (id: string): Promise<IUser> => {
+  const user = await User.findOne({ _id: id, isDeleted: false }).select(
+    '-password -passwordResetToken -passwordResetExpires -refreshToken'
+  );
+  if (!user) throw new AppError('User not found', 404);
+  return user;
+};
+
+// ─── Update User Status ───────────────────────────────────────────────────────
+
+export const updateUserStatus = async (id: string, isActive: boolean): Promise<IUser> => {
+  const user = await User.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { isActive },
+    { new: true }
+  ).select('-password -passwordResetToken -passwordResetExpires -refreshToken');
+  if (!user) throw new AppError('User not found', 404);
+  return user;
+};
+
+// ─── Soft Delete User ─────────────────────────────────────────────────────────
+
+export const softDeleteUser = async (id: string): Promise<void> => {
+  const user = await User.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { isDeleted: true, refreshToken: null }
+  );
+  if (!user) throw new AppError('User not found', 404);
+};
