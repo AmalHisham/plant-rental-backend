@@ -7,6 +7,7 @@ import orderRoutes from './modules/order/routes/order.routes';
 import wishlistRoutes from './modules/wishlist/routes/wishlist.routes';
 import cartRoutes from './modules/cart/routes/cart.routes';
 import paymentRoutes from './modules/payment/routes/payment.routes';
+import adminRoutes from './modules/admin/routes/admin.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
