@@ -18,6 +18,8 @@ export const orderSchema = new Schema(
     damageStatus: { type: String, enum: ['none', 'minor', 'major'], default: 'none' },
     depositRefunded: { type: Boolean, default: false },
     policyAccepted: { type: Boolean, required: true },
+    paymentStatus: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+    razorpayOrderId: { type: String, default: null },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

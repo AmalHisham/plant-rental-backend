@@ -7,6 +7,7 @@ import {
   updateOrderStatus,
   updateDamageStatus,
   updateDepositRefund,
+  checkoutFromCart,
 } from '../service/order.service';
 
 const createOrderSchema = Joi.object({
@@ -98,4 +99,22 @@ export const updateDepositHandler = async (req: AuthRequest, res: Response): Pro
     return;
   }
   res.status(200).json({ success: true, data: order });
+};
+
+const checkoutSchema = Joi.object({
+  deliveryAddress: Joi.string().trim().min(5).required(),
+  policyAccepted: Joi.boolean().valid(true).required().messages({
+    'any.only': 'You must accept the policies before placing an order',
+  }),
+}).required();
+
+export const checkoutHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { error, value } = checkoutSchema.validate(req.body, { abortEarly: false });
+  if (error) {
+    res.status(400).json({ success: false, message: error.details.map((d) => d.message) });
+    return;
+  }
+
+  const order = await checkoutFromCart(req.user!.id, value.deliveryAddress, value.policyAccepted);
+  res.status(201).json({ success: true, data: order });
 };

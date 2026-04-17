@@ -6,6 +6,7 @@ import {
   updateStatusHandler,
   updateDamageHandler,
   updateDepositHandler,
+  checkoutHandler,
 } from '../controller/order.controller';
 import { catchAsync } from '../../../utils/catchAsync';
 
@@ -13,6 +14,7 @@ const router = Router();
 
 // User: place order and view own orders
 router.post('/', protect, authorizeRoles('user'), catchAsync(createOrderHandler));
+router.post('/checkout', protect, authorizeRoles('user'), catchAsync(checkoutHandler));
 router.get('/', protect, authorizeRoles('user'), catchAsync(getMyOrdersHandler));
 
 // Delivery admin: update delivery status

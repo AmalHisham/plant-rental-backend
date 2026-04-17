@@ -18,6 +18,8 @@ export interface IOrder extends Document {
   damageStatus: 'none' | 'minor' | 'major';
   depositRefunded: boolean;
   policyAccepted: true;
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  razorpayOrderId: string | null;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;

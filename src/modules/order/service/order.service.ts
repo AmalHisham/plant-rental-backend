@@ -1,4 +1,5 @@
 import { Plant } from '../../plant/models/plant.model';
+import { Cart } from '../../cart/models/cart.model';
 import { Order, IOrder } from '../models/order.model';
 import { AppError } from '../../../utils/AppError';
 import mongoose from 'mongoose';
@@ -83,4 +84,57 @@ export const updateDepositRefund = async (
   depositRefunded: boolean
 ): Promise<IOrder | null> => {
   return Order.findByIdAndUpdate(orderId, { depositRefunded }, { returnDocument: 'after' });
+};
+
+export const checkoutFromCart = async (
+  userId: string,
+  deliveryAddress: string,
+  policyAccepted: true
+): Promise<IOrder> => {
+  const cart = await Cart.findOne({ userId });
+  if (!cart || cart.items.length === 0) throw new AppError('Cart is empty', 400);
+
+  let rentalTotal = 0;
+  let deposit = 0;
+  let minStart = cart.items[0].rentalStartDate;
+  let maxEnd = cart.items[0].rentalEndDate;
+
+  for (const item of cart.items) {
+    const plant = await Plant.findById(item.plantId);
+    if (!plant || plant.isDeleted) throw new AppError(`Plant not found: ${item.plantId}`, 404);
+    if (!plant.isAvailable || plant.stock < item.quantity) {
+      throw new AppError(`Insufficient stock for plant: ${plant.name}`, 400);
+    }
+    const days = Math.ceil(
+      (item.rentalEndDate.getTime() - item.rentalStartDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    rentalTotal += plant.pricePerDay * days * item.quantity;
+    deposit += plant.depositAmount * item.quantity;
+    if (item.rentalStartDate < minStart) minStart = item.rentalStartDate;
+    if (item.rentalEndDate > maxEnd) maxEnd = item.rentalEndDate;
+  }
+
+  const totalPrice = rentalTotal + deposit;
+
+  for (const item of cart.items) {
+    await Plant.findByIdAndUpdate(item.plantId, { $inc: { stock: -item.quantity } });
+  }
+
+  const order = await Order.create({
+    userId: new mongoose.Types.ObjectId(userId),
+    plants: cart.items.map((item) => ({
+      plantId: item.plantId,
+      quantity: item.quantity,
+    })),
+    rentalStartDate: minStart,
+    rentalEndDate: maxEnd,
+    totalPrice,
+    deposit,
+    deliveryAddress,
+    policyAccepted,
+  });
+
+  await Cart.findOneAndUpdate({ userId }, { items: [] });
+
+  return order;
 };
