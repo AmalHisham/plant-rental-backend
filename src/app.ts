@@ -1,6 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import passport from 'passport';
+import './config/passport';
 import userRoutes, { usersRouter } from './modules/user/routes/user.routes';
 import plantRoutes from './modules/plant/routes/plant.routes';
 import orderRoutes from './modules/order/routes/order.routes';
@@ -15,6 +17,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(passport.initialize());
 
 app.get('/', (_req, res) => {
   res.status(200).json({ success: true, message: 'Plant Rental Platform API' });

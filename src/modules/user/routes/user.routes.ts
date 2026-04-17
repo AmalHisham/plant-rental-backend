@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import passport from 'passport';
 import {
   register,
   login,
@@ -22,6 +23,20 @@ router.post('/forgot-password', catchAsync(forgotPasswordHandler));
 router.post('/reset-password', catchAsync(resetPasswordHandler));
 router.post('/refresh-token', catchAsync(refreshTokenHandler));
 router.post('/logout', protect, catchAsync(logoutHandler));
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
+
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err: Error | null, user: Express.User | false | null) => {
+    if (err || !user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+    }
+    const { accessToken, refreshToken } = user as unknown as { accessToken: string; refreshToken: string };
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
+    );
+  })(req, res, next);
+});
 
 export default router;
 

@@ -10,7 +10,7 @@ export interface AuthRequest extends Request {
 }
 
 export const protect = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -32,7 +32,7 @@ export const protect = async (
       return;
     }
 
-    req.user = { id: decoded.id, role: decoded.role };
+    (req as AuthRequest).user = { id: decoded.id, role: decoded.role };
     next();
   } catch (err: unknown) {
     const isExpired = err instanceof Error && err.name === 'TokenExpiredError';
@@ -44,8 +44,9 @@ export const protect = async (
 };
 
 export const authorizeRoles = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    if (!req.user || !roles.includes(req.user.role)) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const authReq = req as AuthRequest;
+    if (!authReq.user || !roles.includes(authReq.user.role)) {
       res.status(403).json({ success: false, message: 'You do not have permission to perform this action' });
       return;
     }

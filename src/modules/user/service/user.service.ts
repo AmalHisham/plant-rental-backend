@@ -213,3 +213,39 @@ export const softDeleteUser = async (id: string): Promise<void> => {
   );
   if (!user) throw new AppError('User not found', 404);
 };
+
+// ─── Find or Create Google User ───────────────────────────────────────────────
+
+export const findOrCreateGoogleUser = async (
+  googleId: string,
+  email: string,
+  name: string
+): Promise<{ user: Partial<IUser>; accessToken: string; refreshToken: string }> => {
+  let user = await User.findOne({ googleId, isDeleted: false });
+
+  if (!user) {
+    user = await User.findOne({ email, isDeleted: false });
+    if (user) {
+      user.googleId = googleId;
+      await user.save();
+    }
+  }
+
+  if (!user) {
+    user = await User.create({ name, email, googleId });
+  }
+
+  if (!user.isActive) throw new AppError('Account is deactivated', 401);
+
+  const accessToken = signAccessToken(String(user._id), user.role);
+  const refreshToken = signRefreshToken(String(user._id));
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  return {
+    user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+    accessToken,
+    refreshToken,
+  };
+};
