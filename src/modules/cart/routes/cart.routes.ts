@@ -11,12 +11,14 @@ import {
 
 const router = Router();
 
+// router.use(protect) applies the auth middleware to every route in this file —
+// cleaner than attaching protect to each individual route definition.
 router.use(protect);
 
 router.get('/', catchAsync(getCartHandler));
 router.post('/items', catchAsync(addItemHandler));
-router.put('/items/:plantId', catchAsync(updateItemHandler));
-router.delete('/items/:plantId', catchAsync(removeItemHandler));
-router.delete('/', catchAsync(clearCartHandler));
+router.put('/items/:plantId', catchAsync(updateItemHandler));    // update quantity/dates for one item
+router.delete('/items/:plantId', catchAsync(removeItemHandler)); // remove one item
+router.delete('/', catchAsync(clearCartHandler));                // wipe all items
 
 export default router;

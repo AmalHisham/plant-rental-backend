@@ -3,13 +3,9 @@ import Joi from 'joi';
 import { AuthRequest } from '../../../middlewares/auth.middleware';
 import { getWishlist, addToWishlist, removeFromWishlist } from '../service/wishlist.service';
 
-// ─── Validation Schemas ───────────────────────────────────────────────────────
-
 const plantIdParamsSchema = Joi.object({
   plantId: Joi.string().required(),
 }).required();
-
-// ─── Handlers ────────────────────────────────────────────────────────────────
 
 export const getWishlistHandler = async (req: AuthRequest, res: Response): Promise<void> => {
   const wishlist = await getWishlist(req.user!.id);
@@ -17,6 +13,7 @@ export const getWishlistHandler = async (req: AuthRequest, res: Response): Promi
 };
 
 export const addToWishlistHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  // plantId comes from the route param (:plantId) — validated before the service runs.
   const { error, value } = plantIdParamsSchema.validate(req.params);
   if (error) {
     res.status(400).json({ success: false, message: error.details[0].message });

@@ -5,7 +5,7 @@ export interface IPayment extends Document {
   orderId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   razorpayOrderId: string;
-  razorpayPaymentId: string | null;
+  razorpayPaymentId: string | null; // null until payment succeeds
   amount: number;
   currency: string;
   status: 'pending' | 'paid' | 'failed';

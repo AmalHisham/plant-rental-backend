@@ -22,6 +22,8 @@ const createPlantSchema = Joi.object({
   isAvailable: Joi.boolean().default(true),
 }).required();
 
+// .min(1) on the update schema enforces that at least one field must be sent —
+// an empty PATCH body would otherwise pass validation and do nothing silently.
 const updatePlantSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100),
   category: Joi.string().trim().min(2).max(50),
@@ -32,8 +34,10 @@ const updatePlantSchema = Joi.object({
   careLevel: Joi.string().valid('easy', 'medium', 'hard'),
   images: Joi.array().items(Joi.string().uri()),
   isAvailable: Joi.boolean(),
-}).min(1).required(); // at least one field required
+}).min(1).required();
 
+// Query filter schema — convert: true (passed inline below) coerces string query params
+// to the correct types ('true' → true, '12' → 12).
 const filterSchema = Joi.object({
   category: Joi.string().trim(),
   careLevel: Joi.string().valid('easy', 'medium', 'hard'),
@@ -53,7 +57,6 @@ export const getPlants = async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const result = await getAllPlants(value);
   res.status(200).json({ success: true, data: result });
 };
@@ -73,7 +76,6 @@ export const createPlantHandler = async (req: Request, res: Response): Promise<v
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const plant = await createPlant(value);
   res.status(201).json({ success: true, data: plant });
 };
@@ -84,7 +86,6 @@ export const updatePlantHandler = async (req: Request, res: Response): Promise<v
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const plant = await updatePlant(req.params.id as string, value);
   if (!plant) {
     res.status(404).json({ success: false, message: 'Plant not found' });

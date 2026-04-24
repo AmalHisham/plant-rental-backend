@@ -11,11 +11,13 @@ import { catchAsync } from '../../../utils/catchAsync';
 
 const router = Router();
 
-// Public
+// GET endpoints are public — anyone can browse and view plants without authentication.
+// This keeps the homepage fast and crawler-friendly.
 router.get('/', catchAsync(getPlants));
 router.get('/:id', catchAsync(getPlant));
 
-// Product admins only
+// Mutations require a valid JWT (protect) AND the product_admin or super_admin role.
+// super_admin is included on every restricted route by convention — it bypasses all role checks.
 router.post('/', protect, authorizeRoles('super_admin', 'product_admin'), catchAsync(createPlantHandler));
 router.put('/:id', protect, authorizeRoles('super_admin', 'product_admin'), catchAsync(updatePlantHandler));
 router.delete('/:id', protect, authorizeRoles('super_admin', 'product_admin'), catchAsync(deletePlantHandler));

@@ -5,16 +5,14 @@ import app from '../../../app';
 import { User } from '../models/user.model';
 import { sendPasswordResetEmail } from '../service/email.service';
 
-// ─── Mock email service so no real emails are sent ───────────────────────────
-
+// The auth tests focus on API behavior, so email delivery is stubbed out.
 jest.mock('../service/email.service', () => ({
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockSendEmail = sendPasswordResetEmail as jest.Mock;
 
-// ─── Shared state (set by earlier tests, used by later ones) ─────────────────
-
+// Shared state between test cases keeps the flow close to a real user session.
 const BASE = '/api/auth';
 const DOMAIN = '@auth-test.example';
 const email = `user${DOMAIN}`;
@@ -24,11 +22,9 @@ const name = 'Auth Test User';
 let accessToken: string;
 let refreshToken: string;
 
-// ─── Setup / Teardown ─────────────────────────────────────────────────────────
-
 beforeAll(async () => {
+  // Start from a clean collection so uniqueness and token assertions stay stable.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
-  // Clean slate — remove any leftover data from a previous run
   await User.deleteMany({ email: { $regex: '@auth-test\\.example$' } });
 });
 
@@ -41,9 +37,8 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// ─── 1. Register success ──────────────────────────────────────────────────────
-
 it('1. Register success → 201 + accessToken + refreshToken', async () => {
+  // This proves the happy path and captures tokens for later auth tests.
   const res = await request(app)
     .post(`${BASE}/register`)
     .send({ name, email, password });
@@ -58,9 +53,8 @@ it('1. Register success → 201 + accessToken + refreshToken', async () => {
   refreshToken = res.body.data.refreshToken;
 });
 
-// ─── 2. Register duplicate email ──────────────────────────────────────────────
-
 it('2. Register duplicate email → 409', async () => {
+  // Duplicate registration must fail because email is the unique identity field.
   const res = await request(app)
     .post(`${BASE}/register`)
     .send({ name, email, password });
@@ -69,17 +63,15 @@ it('2. Register duplicate email → 409', async () => {
   expect(res.body.success).toBe(false);
 });
 
-// ─── 3. Register empty body ───────────────────────────────────────────────────
-
 it('3. Register empty body → 400', async () => {
+  // Missing fields should be rejected before the service layer runs.
   const res = await request(app).post(`${BASE}/register`).send({});
   expect(res.status).toBe(400);
   expect(res.body.success).toBe(false);
 });
 
-// ─── 4. Login success ─────────────────────────────────────────────────────────
-
 it('4. Login success → 200 + accessToken + refreshToken', async () => {
+  // Logging in should rotate the tokens just like registration does.
   const res = await request(app)
     .post(`${BASE}/login`)
     .send({ email, password });
@@ -89,14 +81,13 @@ it('4. Login success → 200 + accessToken + refreshToken', async () => {
   expect(res.body.data.accessToken).toBeDefined();
   expect(res.body.data.refreshToken).toBeDefined();
 
-  // Refresh tokens for subsequent tests
+  // Refresh the stored session values so later tests use the latest pair.
   accessToken = res.body.data.accessToken;
   refreshToken = res.body.data.refreshToken;
 });
 
-// ─── 5. Login wrong password ──────────────────────────────────────────────────
-
 it('5. Login wrong password → 401', async () => {
+  // Wrong passwords should never reveal whether the email exists.
   const res = await request(app)
     .post(`${BASE}/login`)
     .send({ email, password: 'WrongPassword9' });
@@ -104,8 +95,6 @@ it('5. Login wrong password → 401', async () => {
   expect(res.status).toBe(401);
   expect(res.body.success).toBe(false);
 });
-
-// ─── 6. Login wrong email ─────────────────────────────────────────────────────
 
 it('6. Login wrong email → 401', async () => {
   const res = await request(app)
@@ -116,9 +105,8 @@ it('6. Login wrong email → 401', async () => {
   expect(res.body.success).toBe(false);
 });
 
-// ─── 7. Forgot password — existing email ──────────────────────────────────────
-
 it('7. Forgot password existing email → 200 + email sent', async () => {
+  // Known emails should trigger exactly one reset email.
   const res = await request(app)
     .post(`${BASE}/forgot-password`)
     .send({ email });
@@ -128,9 +116,8 @@ it('7. Forgot password existing email → 200 + email sent', async () => {
   expect(mockSendEmail).toHaveBeenCalledTimes(1);
 });
 
-// ─── 8. Forgot password — non-existing email ──────────────────────────────────
-
 it('8. Forgot password non-existing email → 200 (same response, no email)', async () => {
+  // Unknown emails get the same response so the endpoint does not leak account existence.
   const res = await request(app)
     .post(`${BASE}/forgot-password`)
     .send({ email: `nobody${DOMAIN}` });
@@ -140,8 +127,6 @@ it('8. Forgot password non-existing email → 200 (same response, no email)', as
   expect(mockSendEmail).not.toHaveBeenCalled();
 });
 
-// ─── 9. Protected route with valid accessToken ────────────────────────────────
-
 it('9. Protected route with valid accessToken → 200', async () => {
   const res = await request(app)
     .get('/api/orders')
@@ -150,18 +135,14 @@ it('9. Protected route with valid accessToken → 200', async () => {
   expect(res.status).toBe(200);
 });
 
-// ─── 10. Protected route with no token ───────────────────────────────────────
-
 it('10. Protected route with no token → 401', async () => {
   const res = await request(app).get('/api/orders');
   expect(res.status).toBe(401);
   expect(res.body.success).toBe(false);
 });
 
-// ─── 11. Expired accessToken ──────────────────────────────────────────────────
-
 it('11. Expired accessToken → 401 with clear message', async () => {
-  // Sign a token whose exp is in the past (1 hour ago) to avoid any sleep
+  // A backdated JWT exercises the expiration branch without waiting in real time.
   const expiredToken = jwt.sign(
     {
       id: new mongoose.Types.ObjectId().toString(),
@@ -179,9 +160,8 @@ it('11. Expired accessToken → 401 with clear message', async () => {
   expect(res.body.message).toBe('Access token expired. Please refresh.');
 });
 
-// ─── 12. Refresh token success ────────────────────────────────────────────────
-
 it('12. Refresh token success → 200 + new accessToken', async () => {
+  // Refreshing should issue a new access token without changing the refresh token here.
   const res = await request(app)
     .post(`${BASE}/refresh-token`)
     .send({ refreshToken });
@@ -190,13 +170,12 @@ it('12. Refresh token success → 200 + new accessToken', async () => {
   expect(res.body.success).toBe(true);
   expect(res.body.data.accessToken).toBeDefined();
 
-  // Use the new accessToken for subsequent tests
+  // Use the refreshed access token in later tests.
   accessToken = res.body.data.accessToken;
 });
 
-// ─── 15. Logout (must run before test 13 to set up the "after logout" state) ──
-
 it('15. Logout success → 200', async () => {
+  // Logout clears the persisted refresh token so subsequent refresh attempts fail.
   const res = await request(app)
     .post(`${BASE}/logout`)
     .set('Authorization', `Bearer ${accessToken}`);
@@ -205,8 +184,6 @@ it('15. Logout success → 200', async () => {
   expect(res.body.success).toBe(true);
   expect(res.body.message).toBe('Logged out successfully');
 });
-
-// ─── 13. Refresh token after logout ──────────────────────────────────────────
 
 it('13. Refresh token after logout → 401 (token cleared in DB)', async () => {
   const res = await request(app)
@@ -217,8 +194,6 @@ it('13. Refresh token after logout → 401 (token cleared in DB)', async () => {
   expect(res.body.success).toBe(false);
 });
 
-// ─── 14. Refresh with invalid token ──────────────────────────────────────────
-
 it('14. Refresh with invalid token → 401', async () => {
   const res = await request(app)
     .post(`${BASE}/refresh-token`)
@@ -228,13 +203,11 @@ it('14. Refresh with invalid token → 401', async () => {
   expect(res.body.success).toBe(false);
 });
 
-// ─── 16. Reset password success ───────────────────────────────────────────────
-
 it('16. Reset password success → 200', async () => {
-  // Re-login after logout so the user is in a clean state
+  // Re-login after logout so the reset flow starts from a valid session state.
   await request(app).post(`${BASE}/login`).send({ email, password });
 
-  // Capture the reset token via the email mock
+  // Capture the reset token from the mocked mailer so we can complete the round trip.
   let capturedResetToken: string | undefined;
   mockSendEmail.mockImplementation(async (_to: string, token: string) => {
     capturedResetToken = token;
@@ -253,9 +226,8 @@ it('16. Reset password success → 200', async () => {
   expect(res.body.message).toBe('Password reset successful');
 });
 
-// ─── 17. Reset password with invalid token ────────────────────────────────────
-
 it('17. Reset password invalid token → 400', async () => {
+  // Invalid tokens should fail before any password update happens.
   const res = await request(app)
     .post(`${BASE}/reset-password`)
     .send({ token: 'completely-invalid-reset-token', newPassword: 'AnotherPass789' });

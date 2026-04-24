@@ -1,5 +1,12 @@
+// Email service — sends transactional emails via Nodemailer + Gmail SMTP.
+// A new transporter is created per-call rather than at module level because
+// env vars (EMAIL_USER, EMAIL_PASS) are read at runtime, not at import time.
+
 import nodemailer from 'nodemailer';
 
+// ─── Admin Welcome Email ──────────────────────────────────────────────────────
+// Sent when an admin creates a new admin account via POST /api/admin/create-admin.
+// The temporary password is included in plain text so the new admin can log in and change it.
 export const sendAdminWelcomeEmail = async (
   to: string,
   name: string,
@@ -10,10 +17,14 @@ export const sendAdminWelcomeEmail = async (
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
+      // EMAIL_PASS must be a Gmail App Password (not the account password) when
+      // 2-Step Verification is enabled on the sending Gmail account.
       pass: process.env.EMAIL_PASS,
     },
   });
 
+  // Inline CSS is used throughout because many email clients (Gmail, Outlook) strip
+  // <style> tags and only honour style="" attributes on individual elements.
   const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -88,10 +99,13 @@ export const sendAdminWelcomeEmail = async (
     });
   } catch (err) {
     console.error('Nodemailer error:', err);
-    throw err;
+    throw err; // re-throw so the calling service knows the email failed
   }
 };
 
+// ─── Password Reset Email ─────────────────────────────────────────────────────
+// Sends the raw (unhashed) reset token embedded in a link. The token is never stored
+// raw in the DB — only its SHA-256 hash is persisted (see user.service.ts forgotPassword).
 export const sendPasswordResetEmail = async (
   to: string,
   resetToken: string
@@ -107,7 +121,9 @@ export const sendPasswordResetEmail = async (
     },
   });
 
-  const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+  // The full reset URL is constructed here so the backend controls the frontend route.
+  // FRONTEND_URL is read from env so the same backend works in dev and production.
+  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
 
   const html = `
     <!DOCTYPE html>
@@ -156,7 +172,7 @@ export const sendPasswordResetEmail = async (
                     </tr>
                   </table>
 
-                  <!-- Fallback link -->
+                  <!-- Fallback link for email clients that block <a> buttons -->
                   <p style="margin:24px 0 0;color:#888;font-size:13px;line-height:1.6;">
                     If the button doesn't work, copy and paste this link into your browser:<br/>
                     <a href="${resetLink}" style="color:#2d6a4f;word-break:break-all;">${resetLink}</a>

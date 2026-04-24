@@ -1,3 +1,6 @@
+// User controller — validates HTTP input with Joi, delegates business logic to user.service.ts,
+// and sends the HTTP response. No try-catch blocks here; catchAsync in routes handles rejections.
+
 import { Request, Response } from 'express';
 import Joi from 'joi';
 import {
@@ -15,9 +18,11 @@ import {
 import { AuthRequest } from '../../../middlewares/auth.middleware';
 
 // ─── Validation Schemas ───────────────────────────────────────────────────────
+// Defined at module level (not inside handlers) so they are compiled once and reused.
 
 const registerSchema = Joi.object({
   name: Joi.string().trim().min(2).max(50).required(),
+  // tlds: { allow: false } disables TLD validation — allows local/dev domains (e.g. user@test).
   email: Joi.string().email({ tlds: { allow: false } }).lowercase().required(),
   password: Joi.string().min(8).required(),
 }).required();
@@ -40,7 +45,7 @@ const refreshTokenSchema = Joi.object({
   refreshToken: Joi.string().required(),
 }).required();
 
-// ─── Handlers ────────────────────────────────────────────────────────────────
+// ─── Auth Handlers ────────────────────────────────────────────────────────────
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const { error, value } = registerSchema.validate(req.body);
@@ -48,7 +53,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const result = await registerUser(value.name, value.email, value.password);
   res.status(201).json({ success: true, data: result });
 };
@@ -59,7 +63,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const result = await loginUser(value.email, value.password);
   res.status(200).json({ success: true, data: result });
 };
@@ -70,8 +73,9 @@ export const forgotPasswordHandler = async (req: Request, res: Response): Promis
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   await forgotPassword(value.email);
+  // Generic response — the service silently does nothing for unknown emails,
+  // so this message never reveals whether the email is registered.
   res.status(200).json({
     success: true,
     message: 'If that email exists, a reset link has been sent',
@@ -84,7 +88,6 @@ export const resetPasswordHandler = async (req: Request, res: Response): Promise
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   await resetPassword(value.token, value.newPassword);
   res.status(200).json({ success: true, message: 'Password reset successful' });
 };
@@ -95,12 +98,13 @@ export const refreshTokenHandler = async (req: Request, res: Response): Promise<
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const result = await refreshAccessToken(value.refreshToken);
   res.status(200).json({ success: true, data: result });
 };
 
 export const logoutHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  // req.user is guaranteed to exist here because protect middleware runs before this handler.
+  // The non-null assertion (!) is intentional — TypeScript doesn't know protect sets user.
   await logoutUser(req.user!.id);
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
@@ -114,7 +118,7 @@ const getAllUsersQuerySchema = Joi.object({
   search: Joi.string().max(100),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
-}).options({ convert: true });
+}).options({ convert: true }); // convert: true coerces query string values ('true' → true, '1' → 1)
 
 const userIdParamsSchema = Joi.object({
   id: Joi.string().required(),
@@ -127,6 +131,8 @@ const updateStatusSchema = Joi.object({
 // ─── User Management Handlers ─────────────────────────────────────────────────
 
 export const getAllUsersHandler = async (req: Request, res: Response): Promise<void> => {
+  // req.query values are always strings — convert: true in the schema converts them
+  // to the correct types (boolean, number) before passing to the service.
   const { error, value } = getAllUsersQuerySchema.validate(req.query);
   if (error) {
     res.status(400).json({ success: false, message: error.details[0].message });
@@ -147,6 +153,7 @@ export const getUserByIdHandler = async (req: Request, res: Response): Promise<v
 };
 
 export const updateUserStatusHandler = async (req: Request, res: Response): Promise<void> => {
+  // Validate params and body separately so the error messages are specific to each part.
   const { error: paramsError, value: params } = userIdParamsSchema.validate(req.params);
   if (paramsError) {
     res.status(400).json({ success: false, message: paramsError.details[0].message });
@@ -167,6 +174,7 @@ export const deleteUserHandler = async (req: Request, res: Response): Promise<vo
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
+  // Soft delete — sets isDeleted: true in DB; the record is retained for audit purposes.
   await softDeleteUser(value.id);
   res.status(200).json({ success: true, message: 'User deleted successfully' });
 };

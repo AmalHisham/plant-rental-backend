@@ -22,6 +22,7 @@ let plantId: string;
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Seed one plant, three roles, and a couple of orders so dashboard and filter tests have real data.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
 
   await User.deleteMany({ email: { $regex: '@admin-test\\.example$' } });
@@ -117,7 +118,8 @@ afterAll(async () => {
 // ─── GET /api/admin/dashboard ─────────────────────────────────────────────────
 
 describe('GET /api/admin/dashboard', () => {
-  it('super_admin gets dashboard stats → 200', async () => {
+it('super_admin gets dashboard stats → 200', async () => {
+    // Only the highest admin role should see aggregate platform metrics.
     const res = await request(app)
       .get(`${BASE}/dashboard`)
       .set('Authorization', `Bearer ${superAdminToken}`);
@@ -171,7 +173,8 @@ describe('GET /api/admin/dashboard', () => {
 // ─── GET /api/admin/orders ────────────────────────────────────────────────────
 
 describe('GET /api/admin/orders', () => {
-  it('super_admin gets all orders → 200', async () => {
+it('super_admin gets all orders → 200', async () => {
+    // This endpoint should return a paginated list with populated relations.
     const res = await request(app)
       .get(`${BASE}/orders`)
       .set('Authorization', `Bearer ${superAdminToken}`);
@@ -219,7 +222,8 @@ describe('GET /api/admin/orders', () => {
 // ─── POST /api/admin/create-admin ─────────────────────────────────────────────
 
 describe('POST /api/admin/create-admin', () => {
-  it('super_admin creates a new admin → 201', async () => {
+it('super_admin creates a new admin → 201', async () => {
+    // Admin provisioning should return the new public profile without the generated password.
     const res = await request(app)
       .post(`${BASE}/create-admin`)
       .set('Authorization', `Bearer ${superAdminToken}`)

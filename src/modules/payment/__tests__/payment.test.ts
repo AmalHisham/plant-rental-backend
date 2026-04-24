@@ -34,6 +34,7 @@ let orderId: string;
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Use a fixed Razorpay secret so signature generation stays deterministic.
   // Use a known test secret so signature generation in tests is deterministic
   process.env.RAZORPAY_KEY_SECRET = 'test_razorpay_key_secret';
   process.env.RAZORPAY_KEY_ID = 'test_razorpay_key_id';
@@ -96,6 +97,7 @@ const makeSignature = (rzpOrderId: string, rzpPaymentId: string) =>
 
 describe('POST /api/payment/create-order', () => {
   it('creates Razorpay order and returns razorpayOrderId → 200', async () => {
+    // The payment order should mirror the internal order total and currency.
     const res = await request(app)
       .post(`${BASE}/create-order`)
       .set('Authorization', `Bearer ${userToken}`)
@@ -142,6 +144,7 @@ describe('POST /api/payment/create-order', () => {
 
 describe('POST /api/payment/verify', () => {
   beforeEach(async () => {
+    // Seed a pending payment so the verify endpoint has something to reconcile.
     // Seed a pending payment record matching the mock Razorpay order ID
     await Payment.create({
       orderId: new mongoose.Types.ObjectId(orderId),
@@ -154,6 +157,7 @@ describe('POST /api/payment/verify', () => {
   });
 
   it('verifies valid payment signature → 200 with paid status', async () => {
+    // A valid HMAC should mark the payment as paid and preserve the gateway payment ID.
     const razorpayPaymentId = 'pay_mock_valid_123';
     const signature = makeSignature(MOCK_RZP_ORDER_ID, razorpayPaymentId);
 

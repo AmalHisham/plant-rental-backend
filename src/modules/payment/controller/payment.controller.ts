@@ -9,12 +9,13 @@ import {
 import { AppError } from '../../../utils/AppError';
 
 const createPaymentOrderSchema = Joi.object({
-  orderId: Joi.string().length(24).required(),
+  orderId: Joi.string().length(24).required(), // must be a valid 24-char MongoDB ObjectId
 }).required();
 
 const verifyPaymentSchema = Joi.object({
   razorpayOrderId: Joi.string().required(),
   razorpayPaymentId: Joi.string().required(),
+  // signature is the HMAC-SHA256 value returned by the Razorpay checkout widget
   signature: Joi.string().required(),
 }).required();
 
@@ -27,7 +28,6 @@ export const createPaymentOrderHandler = async (
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-
   const result = await createRazorpayOrder(value.orderId, req.user!.id);
   res.status(200).json({ success: true, data: result });
 };
@@ -42,6 +42,7 @@ export const verifyPaymentHandler = async (req: AuthRequest, res: Response): Pro
   const isValid = verifyPayment(value.razorpayOrderId, value.razorpayPaymentId, value.signature);
 
   if (!isValid) {
+    // Mark as failed in the DB before throwing so the record is not left in 'pending' state.
     await updateOrderPaymentStatus(value.razorpayOrderId, value.razorpayPaymentId, 'failed');
     throw new AppError('Invalid payment signature', 400);
   }

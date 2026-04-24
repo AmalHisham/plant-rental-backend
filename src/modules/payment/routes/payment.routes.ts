@@ -8,6 +8,8 @@ import {
 
 const router = Router();
 
+// Both payment endpoints are restricted to the 'user' role.
+// Admins should not be able to trigger payments on behalf of users.
 router.post('/create-order', protect, authorizeRoles('user'), catchAsync(createPaymentOrderHandler));
 router.post('/verify', protect, authorizeRoles('user'), catchAsync(verifyPaymentHandler));
 

@@ -35,6 +35,7 @@ let lowStockPlantId: string;
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Seed two users and a handful of plants so stock and ownership checks are reproducible.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
 
   await User.deleteMany({ email: { $regex: '@cart-test\\.example$' } });
@@ -159,6 +160,7 @@ it('2. GET cart before any adds → 200 with empty items and cartTotal 0', async
 // ─── 3. Add item → 200 ───────────────────────────────────────────────────────
 
 it('3. Add item to cart → 200 with 1 item and computed totals', async () => {
+  // This proves the backend recalculates quantity, rental days, and price server-side.
   const res = await request(app)
     .post(`${BASE}/items`)
     .set('Authorization', `Bearer ${userToken}`)
@@ -304,6 +306,7 @@ it('10. Add second plant → 200, cart has 2 items', async () => {
 // ─── 11. GET cart → populated plant details and correct totals ────────────────
 
 it('11. GET cart → 200 with populated plant fields and correct cartTotal', async () => {
+  // The response should include populated plant details plus derived totals.
   const res = await request(app)
     .get(BASE)
     .set('Authorization', `Bearer ${userToken}`);
@@ -414,6 +417,7 @@ it('18. Remove already-removed item → 400', async () => {
 // ─── 19. Clear cart → 200 ────────────────────────────────────────────────────
 
 it('19. Clear cart → 200', async () => {
+  // Clearing the cart should preserve the cart document but empty its items array.
   const res = await request(app)
     .delete(BASE)
     .set('Authorization', `Bearer ${userToken}`);

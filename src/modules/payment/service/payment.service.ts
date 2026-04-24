@@ -2,14 +2,21 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { Order } from '../../order/models/order.model';
+import { Plant } from '../../plant/models/plant.model';
 import { Payment, IPayment } from '../models/payment.model';
 import { AppError } from '../../../utils/AppError';
 
+// getRazorpay() is a factory function rather than a module-level singleton so that
+// env vars are read at call time (after dotenv has run), not at module import time.
 const getRazorpay = () =>
   new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID as string,
     key_secret: process.env.RAZORPAY_KEY_SECRET as string,
   });
+
+// ─── Create Razorpay Order ────────────────────────────────────────────────────
+// Creates a Razorpay order object that the frontend checkout widget uses to initiate payment.
+// Returns the Razorpay order ID, amount, and our internal payment document ID.
 
 export const createRazorpayOrder = async (
   orderId: string,
@@ -20,11 +27,14 @@ export const createRazorpayOrder = async (
 
   const razorpay = getRazorpay();
   const rzpOrder = await razorpay.orders.create({
-    amount: Math.round(order.totalPrice * 100), // paise
+    // Razorpay expects amounts in the smallest currency unit (paise for INR).
+    // Math.round avoids floating-point precision issues when multiplying by 100.
+    amount: Math.round(order.totalPrice * 100),
     currency: 'INR',
-    receipt: orderId,
+    receipt: orderId, // linked back to our internal order ID for reconciliation
   });
 
+  // Create an internal payment record to track the Razorpay order lifecycle.
   const payment = await Payment.create({
     orderId: new mongoose.Types.ObjectId(orderId),
     userId: new mongoose.Types.ObjectId(userId),
@@ -34,6 +44,8 @@ export const createRazorpayOrder = async (
     status: 'pending',
   });
 
+  // Also store the Razorpay order ID on the internal order document so that
+  // verifyPayment can look up the order without querying the Payment collection.
   await Order.findByIdAndUpdate(orderId, { razorpayOrderId: rzpOrder.id });
 
   return {
@@ -44,11 +56,17 @@ export const createRazorpayOrder = async (
   };
 };
 
+// ─── Verify Payment Signature ─────────────────────────────────────────────────
+// Razorpay sends a signature with its payment callback. We recompute it using the
+// shared key_secret and compare — this proves the callback came from Razorpay, not
+// a spoofed request. If signatures don't match, the payment should be rejected.
+
 export const verifyPayment = (
   razorpayOrderId: string,
   razorpayPaymentId: string,
   signature: string
 ): boolean => {
+  // The expected signature is HMAC-SHA256 of "orderId|paymentId" using the key_secret.
   const body = `${razorpayOrderId}|${razorpayPaymentId}`;
   const expected = crypto
     .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET as string)
@@ -56,6 +74,11 @@ export const verifyPayment = (
     .digest('hex');
   return expected === signature;
 };
+
+// ─── Update Order Payment Status ──────────────────────────────────────────────
+// Called after signature verification — marks both the Payment and Order documents.
+// On failure, the reserved stock is released back into inventory so the plants
+// can be booked by other users.
 
 export const updateOrderPaymentStatus = async (
   razorpayOrderId: string,
@@ -69,7 +92,19 @@ export const updateOrderPaymentStatus = async (
   );
 
   if (payment) {
+    // Keep the Order's paymentStatus field in sync with the Payment record.
     await Order.findByIdAndUpdate(payment.orderId, { paymentStatus: status });
+
+    if (status === 'failed') {
+      // Stock was decremented when the order was created. Roll it back on payment failure
+      // so the inventory reflects the actual available quantity.
+      const order = await Order.findById(payment.orderId);
+      if (order) {
+        for (const item of order.plants) {
+          await Plant.findByIdAndUpdate(item.plantId, { $inc: { stock: item.quantity } });
+        }
+      }
+    }
   }
 
   return payment;

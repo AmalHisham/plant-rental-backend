@@ -27,6 +27,7 @@ let targetUserId: string;
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Seed a few roles up front so each permission test has a stable starting point.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
   await User.deleteMany({ email: { $regex: '@user-mgmt-test\\.example$' } });
 
@@ -78,6 +79,7 @@ afterAll(async () => {
 // ─── 1. Get all users — super_admin → 200 ────────────────────────────────────
 
 it('1. Get all users (super_admin) → 200 with paginated list', async () => {
+  // Super admins should see the full paginated collection.
   const res = await request(app)
     .get(BASE)
     .set('Authorization', `Bearer ${superAdminToken}`);
@@ -122,6 +124,7 @@ it('4. Get all users (no token) → 401', async () => {
 // ─── 5. Get user by id → 200 ─────────────────────────────────────────────────
 
 it('5. Get user by id → 200', async () => {
+  // This also verifies that sensitive auth fields stay hidden in the response.
   const res = await request(app)
     .get(`${BASE}/${targetUserId}`)
     .set('Authorization', `Bearer ${superAdminToken}`);
@@ -218,6 +221,7 @@ it('12. Delete user (user_admin) → 403 (only super_admin can delete)', async (
 // ─── 13. Delete user (soft) — super_admin → 200 ──────────────────────────────
 
 it('13. Delete user (super_admin) → 200', async () => {
+  // Soft deletion is the privileged path that should actually remove the account from active views.
   const res = await request(app)
     .delete(`${BASE}/${targetUserId}`)
     .set('Authorization', `Bearer ${superAdminToken}`);

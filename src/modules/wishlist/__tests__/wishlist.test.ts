@@ -21,6 +21,7 @@ let unavailablePlantId: string;
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Prepare two users and a small set of plant states for availability and ownership checks.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
 
   // Clean slate
@@ -138,6 +139,7 @@ it('2. Get wishlist before any adds → 200 with empty plants array', async () =
 // ─── 3. Add plant → 200 ──────────────────────────────────────────────────────
 
 it('3. Add plant to wishlist → 200 with plant in list', async () => {
+  // The wishlist should only accept an available, undeleted plant.
   const res = await request(app)
     .post(`${BASE}/${availablePlantId}`)
     .set('Authorization', `Bearer ${userToken}`);
@@ -194,6 +196,7 @@ it('7. Add second plant → 200, wishlist now has 2 plants', async () => {
 // ─── 8. Get wishlist — populated plant details → 200 ─────────────────────────
 
 it('8. Get wishlist → 200 with populated plant details', async () => {
+  // Populated plant data should be enough for the UI card without exposing internal flags.
   const res = await request(app)
     .get(BASE)
     .set('Authorization', `Bearer ${userToken}`);
@@ -259,6 +262,7 @@ it('12. Remove already-removed plant → 400', async () => {
 // ─── 13. Get wishlist after removal reflects correct count ────────────────────
 
 it('13. Get wishlist after removal → 200 with 1 plant remaining', async () => {
+  // This checks that the remove flow leaves the remaining item intact.
   const res = await request(app)
     .get(BASE)
     .set('Authorization', `Bearer ${userToken}`);

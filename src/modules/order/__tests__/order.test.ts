@@ -19,6 +19,7 @@ let orderId: string;
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Seed the actors and plant once so order status and role checks run against the same record set.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
   await Order.deleteMany({ deliveryAddress: '123 Test Order Street' });
   await Plant.deleteMany({ name: 'Order Test Fern' });
@@ -105,8 +106,9 @@ const validPayload = (overrides: Record<string, unknown> = {}) => {
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 
 describe('POST /api/orders', () => {
-  it('creates order and returns correct price calculation → 201', async () => {
-    const res = await request(app)
+it('creates order and returns correct price calculation → 201', async () => {
+  // The total should combine rental charges and deposit exactly once.
+  const res = await request(app)
       .post(BASE)
       .set('Authorization', `Bearer ${userToken}`)
       .send(validPayload());
@@ -206,8 +208,9 @@ describe('GET /api/orders', () => {
 // ─── STATUS UPDATE ────────────────────────────────────────────────────────────
 
 describe('PATCH /api/orders/:id/status', () => {
-  it('delivery_admin updates status to delivered → 200', async () => {
-    const res = await request(app)
+it('delivery_admin updates status to delivered → 200', async () => {
+  // Delivery admins are the only role expected to move the order lifecycle forward.
+  const res = await request(app)
       .patch(`${BASE}/${orderId}/status`)
       .set('Authorization', `Bearer ${deliveryAdminToken}`)
       .send({ status: 'delivered' });
@@ -330,9 +333,10 @@ describe('PATCH /api/orders/:id/deposit', () => {
 // ─── SOFT DELETE ──────────────────────────────────────────────────────────────
 
 describe('Soft delete behaviour', () => {
-  it('order with isDeleted:true does not appear in GET /api/orders', async () => {
-    // Soft-delete directly via model (no DELETE endpoint exists)
-    await Order.findByIdAndUpdate(orderId, { isDeleted: true });
+it('order with isDeleted:true does not appear in GET /api/orders', async () => {
+  // Soft-deleted orders should be invisible to the user-facing list endpoint.
+  // Soft-delete directly via model (no DELETE endpoint exists)
+  await Order.findByIdAndUpdate(orderId, { isDeleted: true });
 
     const res = await request(app)
       .get(BASE)

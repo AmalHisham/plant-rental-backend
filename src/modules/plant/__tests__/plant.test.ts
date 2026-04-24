@@ -26,6 +26,7 @@ const plantPayload = {
 // ─── Setup / Teardown ─────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Seed admins, users, and a few plants so each CRUD and filter branch is deterministic.
   await mongoose.connect(process.env.TEST_MONGO_URI!);
   await Plant.deleteMany({ name: { $regex: /^Test/ } });
   await User.deleteMany({ email: { $regex: '@plant-test\\.example$' } });
@@ -145,6 +146,7 @@ describe('POST /api/plants', () => {
 
 describe('GET /api/plants', () => {
   it('returns 200 with plants array and pagination', async () => {
+    // The browse endpoint should always return both data and pagination metadata.
     const res = await request(app).get(BASE);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data.plants)).toBe(true);
@@ -196,6 +198,7 @@ describe('GET /api/plants', () => {
   });
 
   it('pagination: page=2&limit=1 → returns different plant than page 1', async () => {
+    // Page boundaries should change the actual result set, not just the metadata.
     const page1 = await request(app).get(`${BASE}?page=1&limit=1`);
     const page2 = await request(app).get(`${BASE}?page=2&limit=1`);
     expect(page1.status).toBe(200);
@@ -286,6 +289,7 @@ describe('DELETE /api/plants/:id', () => {
   });
 
   it('product_admin soft-deletes plant → 200', async () => {
+    // Soft deletion keeps the record for historical queries while hiding it from normal browsing.
     const res = await request(app)
       .delete(`${BASE}/${createdPlantId}`)
       .set('Authorization', `Bearer ${productAdminToken}`);
