@@ -1,11 +1,7 @@
 import { Response } from 'express';
-import Joi from 'joi';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { getWishlist, addToWishlist, removeFromWishlist } from './wishlist.service';
-
-const plantIdParamsSchema = Joi.object({
-  plantId: Joi.string().required(),
-}).required();
+import { plantIdParamsSchema } from './wishlist.validation';
 
 export const getWishlistHandler = async (req: AuthRequest, res: Response): Promise<void> => {
   const wishlist = await getWishlist(req.user!.id);

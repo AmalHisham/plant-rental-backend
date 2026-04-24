@@ -2,7 +2,6 @@
 // and sends the HTTP response. No try-catch blocks here; catchAsync in routes handles rejections.
 
 import { Request, Response } from 'express';
-import Joi from 'joi';
 import {
   registerUser,
   loginUser,
@@ -16,34 +15,16 @@ import {
   softDeleteUser,
 } from './service/user.service';
 import { AuthRequest } from '../../middlewares/auth.middleware';
-
-// ─── Validation Schemas ───────────────────────────────────────────────────────
-// Defined at module level (not inside handlers) so they are compiled once and reused.
-
-const registerSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(50).required(),
-  // tlds: { allow: false } disables TLD validation — allows local/dev domains (e.g. user@test).
-  email: Joi.string().email({ tlds: { allow: false } }).lowercase().required(),
-  password: Joi.string().min(8).required(),
-}).required();
-
-const loginSchema = Joi.object({
-  email: Joi.string().email({ tlds: { allow: false } }).lowercase().required(),
-  password: Joi.string().required(),
-}).required();
-
-const forgotPasswordSchema = Joi.object({
-  email: Joi.string().email({ tlds: { allow: false } }).lowercase().required(),
-}).required();
-
-const resetPasswordSchema = Joi.object({
-  token: Joi.string().required(),
-  newPassword: Joi.string().min(8).required(),
-}).required();
-
-const refreshTokenSchema = Joi.object({
-  refreshToken: Joi.string().required(),
-}).required();
+import {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  refreshTokenSchema,
+  getAllUsersQuerySchema,
+  userIdParamsSchema,
+  updateStatusSchema,
+} from './user.validation';
 
 // ─── Auth Handlers ────────────────────────────────────────────────────────────
 
@@ -108,25 +89,6 @@ export const logoutHandler = async (req: AuthRequest, res: Response): Promise<vo
   await logoutUser(req.user!.id);
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
-
-// ─── User Management Schemas ──────────────────────────────────────────────────
-
-const getAllUsersQuerySchema = Joi.object({
-  role: Joi.string().valid('user', 'super_admin', 'product_admin', 'order_admin', 'delivery_admin', 'user_admin'),
-  isActive: Joi.boolean(),
-  isDeleted: Joi.boolean(),
-  search: Joi.string().max(100),
-  page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
-}).options({ convert: true }); // convert: true coerces query string values ('true' → true, '1' → 1)
-
-const userIdParamsSchema = Joi.object({
-  id: Joi.string().required(),
-}).required();
-
-const updateStatusSchema = Joi.object({
-  isActive: Joi.boolean().required(),
-}).required();
 
 // ─── User Management Handlers ─────────────────────────────────────────────────
 

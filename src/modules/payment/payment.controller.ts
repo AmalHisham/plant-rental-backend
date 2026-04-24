@@ -1,5 +1,4 @@
 import { Response } from 'express';
-import Joi from 'joi';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import {
   createRazorpayOrder,
@@ -7,17 +6,7 @@ import {
   updateOrderPaymentStatus,
 } from './payment.service';
 import { AppError } from '../../utils/AppError';
-
-const createPaymentOrderSchema = Joi.object({
-  orderId: Joi.string().length(24).required(), // must be a valid 24-char MongoDB ObjectId
-}).required();
-
-const verifyPaymentSchema = Joi.object({
-  razorpayOrderId: Joi.string().required(),
-  razorpayPaymentId: Joi.string().required(),
-  // signature is the HMAC-SHA256 value returned by the Razorpay checkout widget
-  signature: Joi.string().required(),
-}).required();
+import { createPaymentOrderSchema, verifyPaymentSchema } from './payment.validation';
 
 export const createPaymentOrderHandler = async (
   req: AuthRequest,
