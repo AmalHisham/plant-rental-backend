@@ -11,13 +11,13 @@ import passport from 'passport';
 // Must be imported before any route calls passport.authenticate('google').
 import './config/passport';
 
-import userRoutes, { usersRouter } from './modules/user/routes/user.routes';
-import plantRoutes from './modules/plant/routes/plant.routes';
-import orderRoutes from './modules/order/routes/order.routes';
-import wishlistRoutes from './modules/wishlist/routes/wishlist.routes';
-import cartRoutes from './modules/cart/routes/cart.routes';
-import paymentRoutes from './modules/payment/routes/payment.routes';
-import adminRoutes from './modules/admin/routes/admin.routes';
+import userRoutes, { usersRouter } from './modules/user/user.routes';
+import plantRoutes from './modules/plant/plant.routes';
+import orderRoutes from './modules/order/order.routes';
+import wishlistRoutes from './modules/wishlist/wishlist.routes';
+import cartRoutes from './modules/cart/cart.routes';
+import paymentRoutes from './modules/payment/payment.routes';
+import adminRoutes from './modules/admin/admin.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
