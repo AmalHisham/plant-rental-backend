@@ -96,7 +96,7 @@ export const addItem = async (userId: string, input: AddItemInput) => {
   // Use PUT /api/cart/items/:plantId to change quantity or dates for an existing item.
   const alreadyInCart = cart.items.some((i) => i.plantId.toString() === input.plantId);
   if (alreadyInCart)
-    throw new AppError('Plant already in cart. Use PUT /api/cart/items/:plantId to update', 400);
+    throw new AppError('Plant already in cart. Update the quantity or dates instead.', 400);
 
   cart.items.push({
     plantId: new mongoose.Types.ObjectId(input.plantId),
