@@ -14,6 +14,7 @@ import {
   updateDamageSchema,
   updateDepositSchema,
   checkoutSchema,
+  orderParamsSchema,
 } from './order.validation';
 
 // ─── Handlers ────────────────────────────────────────────────────────────────
@@ -35,12 +36,17 @@ export const getMyOrdersHandler = async (req: AuthRequest, res: Response): Promi
 };
 
 export const updateStatusHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { error: paramsError, value: params } = orderParamsSchema.validate(req.params);
+  if (paramsError) {
+    res.status(400).json({ success: false, message: paramsError.details[0].message });
+    return;
+  }
   const { error, value } = updateStatusSchema.validate(req.body, { abortEarly: false });
   if (error) {
     res.status(400).json({ success: false, message: error.details.map((d) => d.message) });
     return;
   }
-  const order = await updateOrderStatus(req.params.id as string, value.status);
+  const order = await updateOrderStatus(params.id, value.status);
   if (!order) {
     res.status(404).json({ success: false, message: 'Order not found' });
     return;
@@ -49,12 +55,17 @@ export const updateStatusHandler = async (req: AuthRequest, res: Response): Prom
 };
 
 export const updateDamageHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { error: paramsError, value: params } = orderParamsSchema.validate(req.params);
+  if (paramsError) {
+    res.status(400).json({ success: false, message: paramsError.details[0].message });
+    return;
+  }
   const { error, value } = updateDamageSchema.validate(req.body, { abortEarly: false });
   if (error) {
     res.status(400).json({ success: false, message: error.details.map((d) => d.message) });
     return;
   }
-  const order = await updateDamageStatus(req.params.id as string, value.damageStatus);
+  const order = await updateDamageStatus(params.id, value.damageStatus);
   if (!order) {
     res.status(404).json({ success: false, message: 'Order not found' });
     return;
@@ -63,12 +74,17 @@ export const updateDamageHandler = async (req: AuthRequest, res: Response): Prom
 };
 
 export const updateDepositHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { error: paramsError, value: params } = orderParamsSchema.validate(req.params);
+  if (paramsError) {
+    res.status(400).json({ success: false, message: paramsError.details[0].message });
+    return;
+  }
   const { error, value } = updateDepositSchema.validate(req.body, { abortEarly: false });
   if (error) {
     res.status(400).json({ success: false, message: error.details.map((d) => d.message) });
     return;
   }
-  const order = await updateDepositRefund(req.params.id as string, value.depositRefunded);
+  const order = await updateDepositRefund(params.id, value.depositRefunded);
   if (!order) {
     res.status(404).json({ success: false, message: 'Order not found' });
     return;

@@ -6,7 +6,7 @@ import {
   updatePlant,
   deletePlant,
 } from './plant.service';
-import { createPlantSchema, updatePlantSchema, filterSchema } from './plant.validation';
+import { createPlantSchema, updatePlantSchema, filterSchema, plantParamsSchema } from './plant.validation';
 
 // ─── Handlers ────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,12 @@ export const getPlants = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const getPlant = async (req: Request, res: Response): Promise<void> => {
-  const plant = await getPlantById(req.params.id as string);
+  const { error, value } = plantParamsSchema.validate(req.params);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const plant = await getPlantById(value.id);
   if (!plant) {
     res.status(404).json({ success: false, message: 'Plant not found' });
     return;
@@ -40,12 +45,17 @@ export const createPlantHandler = async (req: Request, res: Response): Promise<v
 };
 
 export const updatePlantHandler = async (req: Request, res: Response): Promise<void> => {
+  const { error: paramsError, value: params } = plantParamsSchema.validate(req.params);
+  if (paramsError) {
+    res.status(400).json({ success: false, message: paramsError.details[0].message });
+    return;
+  }
   const { error, value } = updatePlantSchema.validate(req.body);
   if (error) {
     res.status(400).json({ success: false, message: error.details[0].message });
     return;
   }
-  const plant = await updatePlant(req.params.id as string, value);
+  const plant = await updatePlant(params.id, value);
   if (!plant) {
     res.status(404).json({ success: false, message: 'Plant not found' });
     return;
@@ -54,7 +64,12 @@ export const updatePlantHandler = async (req: Request, res: Response): Promise<v
 };
 
 export const deletePlantHandler = async (req: Request, res: Response): Promise<void> => {
-  const plant = await deletePlant(req.params.id as string);
+  const { error, value } = plantParamsSchema.validate(req.params);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const plant = await deletePlant(value.id);
   if (!plant) {
     res.status(404).json({ success: false, message: 'Plant not found' });
     return;

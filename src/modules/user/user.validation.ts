@@ -35,7 +35,7 @@ export const getAllUsersQuerySchema = Joi.object({
 }).options({ convert: true }); // convert: true coerces query string values ('true' → true, '1' → 1)
 
 export const userIdParamsSchema = Joi.object({
-  id: Joi.string().required(),
+  id: Joi.string().length(24).hex().required(),
 }).required();
 
 export const updateStatusSchema = Joi.object({
