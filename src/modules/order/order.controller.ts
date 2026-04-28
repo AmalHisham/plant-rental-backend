@@ -3,6 +3,7 @@ import { AuthRequest } from '../../middlewares/auth.middleware';
 import {
   createOrder,
   getOrdersByUser,
+  getOrderById,
   updateOrderStatus,
   updateDamageStatus,
   updateDepositRefund,
@@ -86,6 +87,21 @@ export const updateDepositHandler = async (req: AuthRequest, res: Response): Pro
   }
   const order = await updateDepositRefund(params.id, value.depositRefunded);
   if (!order) {
+    res.status(404).json({ success: false, message: 'Order not found' });
+    return;
+  }
+  res.status(200).json({ success: true, data: order });
+};
+
+export const getMyOrderByIdHandler = async (req: AuthRequest, res: Response): Promise<void> => {
+  const { error, value } = orderParamsSchema.validate(req.params);
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const order = await getOrderById(value.id);
+  // Only return the order if it belongs to the authenticated user.
+  if (!order || order.userId.toString() !== req.user!.id) {
     res.status(404).json({ success: false, message: 'Order not found' });
     return;
   }

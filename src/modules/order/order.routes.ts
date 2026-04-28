@@ -3,6 +3,7 @@ import { protect, authorizeRoles } from '../../middlewares/auth.middleware';
 import {
   createOrderHandler,
   getMyOrdersHandler,
+  getMyOrderByIdHandler,
   updateStatusHandler,
   updateDamageHandler,
   updateDepositHandler,
@@ -18,6 +19,7 @@ const router = Router();
 router.post('/', protect, authorizeRoles('user'), catchAsync(createOrderHandler));
 router.post('/checkout', protect, authorizeRoles('user'), catchAsync(checkoutHandler));
 router.get('/', protect, authorizeRoles('user'), catchAsync(getMyOrdersHandler));
+router.get('/:id', protect, authorizeRoles('user'), catchAsync(getMyOrderByIdHandler));
 
 // ── Delivery admin: update delivery status ────────────────────────────────────
 // Status transitions: booked → delivered → picked. Only delivery_admin manages this.

@@ -68,13 +68,16 @@ export const createOrder = async (input: CreateOrderInput): Promise<IOrder> => {
 // ─── Get Orders by User ───────────────────────────────────────────────────────
 
 export const getOrdersByUser = async (userId: string): Promise<IOrder[]> => {
-  return Order.find({ userId, isDeleted: false }).sort({ createdAt: -1 });
+  return Order.find({ userId, isDeleted: false })
+    .populate('plants.plantId', 'name category images pricePerDay depositAmount')
+    .sort({ createdAt: -1 });
 };
 
 // ─── Get Order By ID ──────────────────────────────────────────────────────────
 
 export const getOrderById = async (orderId: string): Promise<IOrder | null> => {
-  return Order.findOne({ _id: orderId, isDeleted: false });
+  return Order.findOne({ _id: orderId, isDeleted: false })
+    .populate('plants.plantId', 'name category images pricePerDay depositAmount');
 };
 
 // ─── Update Order Status ──────────────────────────────────────────────────────
