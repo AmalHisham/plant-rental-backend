@@ -18,6 +18,7 @@ import wishlistRoutes from './modules/wishlist/wishlist.routes';
 import cartRoutes from './modules/cart/cart.routes';
 import paymentRoutes from './modules/payment/payment.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import profileRoutes from './modules/profile/profile.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
 
 // errorHandler MUST be the last middleware. Express identifies a 4-argument middleware
 // as an error handler — any error passed via next(err) or thrown inside catchAsync lands here.

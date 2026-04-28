@@ -41,6 +41,11 @@ export const userSchema = new Schema(
     // refreshToken is stored so the server can invalidate sessions (logout, soft delete).
     // Only the most recently issued refresh token is valid — old ones are replaced on each login.
     refreshToken: { type: String },
+
+    phone: { type: String, trim: true },
+
+    // policyAccepted must be true before order creation (enforced in order service).
+    policyAccepted: { type: Boolean, default: false },
   },
   // timestamps: true adds createdAt and updatedAt fields, managed automatically by Mongoose.
   { timestamps: true }

@@ -26,6 +26,8 @@ export interface IUser extends Document {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   refreshToken?: string;
+  phone?: string;
+  policyAccepted: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
