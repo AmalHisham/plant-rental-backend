@@ -30,6 +30,10 @@ export const plantParamsSchema = Joi.object({
   id: Joi.string().length(24).hex().required(),
 }).required();
 
+export const deleteImageSchema = Joi.object({
+  imageUrl: Joi.string().uri().required(),
+}).required();
+
 // Query filter schema — convert: true (passed inline in controller) coerces string query params
 // to the correct types ('true' → true, '12' → 12).
 export const filterSchema = Joi.object({

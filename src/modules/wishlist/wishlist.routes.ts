@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect } from '../../middlewares/auth.middleware';
+import { protect, authorizeRoles } from '../../middlewares/auth.middleware';
 import { catchAsync } from '../../utils/catchAsync';
 import {
   getWishlistHandler,
@@ -9,8 +9,8 @@ import {
 
 const router = Router();
 
-// All wishlist operations are user-scoped and require authentication.
-router.use(protect);
+// Wishlist is a customer-only feature — admin roles should not have wishlists.
+router.use(protect, authorizeRoles('user'));
 
 router.get('/', catchAsync(getWishlistHandler));
 // POST /:plantId  — add plant to wishlist; plantId in path (not body) keeps the API RESTful

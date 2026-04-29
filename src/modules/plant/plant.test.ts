@@ -229,9 +229,9 @@ describe('GET /api/plants/:id', () => {
     expect(res.status).toBe(404);
   });
 
-  it('invalid ObjectId format → 404', async () => {
+  it('invalid ObjectId format → 400', async () => {
     const res = await request(app).get(`${BASE}/not-a-valid-id`);
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(400);
   });
 });
 

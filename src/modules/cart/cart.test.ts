@@ -26,6 +26,7 @@ laterEndDate.setHours(12, 0, 0, 0);
 
 let userToken: string;
 let otherUserToken: string;
+let adminToken: string;
 let availablePlantId: string;
 let anotherPlantId: string;
 let deletedPlantId: string;
@@ -53,6 +54,12 @@ beforeAll(async () => {
     password: 'irrelevant-hashed',
     role: 'user',
   });
+  const admin = await User.create({
+    name: 'Cart Admin',
+    email: `admin${DOMAIN}`,
+    password: 'irrelevant-hashed',
+    role: 'product_admin',
+  });
 
   userToken = jwt.sign(
     { id: user._id.toString(), role: 'user' },
@@ -61,6 +68,11 @@ beforeAll(async () => {
   );
   otherUserToken = jwt.sign(
     { id: otherUser._id.toString(), role: 'user' },
+    process.env.JWT_SECRET!,
+    { expiresIn: '1h' }
+  );
+  adminToken = jwt.sign(
+    { id: admin._id.toString(), role: 'product_admin' },
     process.env.JWT_SECRET!,
     { expiresIn: '1h' }
   );
@@ -142,6 +154,13 @@ afterAll(async () => {
 it('1. GET cart (unauthenticated) → 401', async () => {
   const res = await request(app).get(BASE);
   expect(res.status).toBe(401);
+});
+
+// ─── 1b. Admin GET cart → 403 ────────────────────────────────────────────────
+
+it('1b. GET cart (admin role) → 403', async () => {
+  const res = await request(app).get(BASE).set('Authorization', `Bearer ${adminToken}`);
+  expect(res.status).toBe(403);
 });
 
 // ─── 2. GET empty cart → 200 with empty items ────────────────────────────────

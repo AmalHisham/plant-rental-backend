@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { protect } from '../../middlewares/auth.middleware';
+import { protect, authorizeRoles } from '../../middlewares/auth.middleware';
 import { catchAsync } from '../../utils/catchAsync';
 import {
   getCartHandler,
@@ -11,9 +11,8 @@ import {
 
 const router = Router();
 
-// router.use(protect) applies the auth middleware to every route in this file —
-// cleaner than attaching protect to each individual route definition.
-router.use(protect);
+// Cart is a customer-only feature — admin roles have no business adding plants to a cart.
+router.use(protect, authorizeRoles('user'));
 
 router.get('/', catchAsync(getCartHandler));
 router.post('/items', catchAsync(addItemHandler));
