@@ -4,8 +4,8 @@ export const updateProfileSchema = Joi.object({
   name: Joi.string().trim().min(2).max(50),
   phone: Joi.string()
     .trim()
-    .pattern(/^[0-9]{10}$/)
-    .messages({ 'string.pattern.base': 'Phone number must be exactly 10 digits' }),
+    .pattern(/^\+[1-9]\d{6,14}$/)
+    .messages({ 'string.pattern.base': 'Phone number must be in international format (e.g. +919876543210)' }),
 }).min(1).required();
 
 export const changePasswordSchema = Joi.object({
@@ -18,9 +18,9 @@ export const createAddressSchema = Joi.object({
   recipientName: Joi.string().trim().min(2).max(100).required(),
   phone: Joi.string()
     .trim()
-    .pattern(/^[0-9]{10}$/)
+    .pattern(/^\+[1-9]\d{6,14}$/)
     .required()
-    .messages({ 'string.pattern.base': 'Phone number must be exactly 10 digits' }),
+    .messages({ 'string.pattern.base': 'Phone number must be in international format (e.g. +919876543210)' }),
   addressLine1: Joi.string().trim().min(5).max(200).required(),
   addressLine2: Joi.string().trim().max(200).allow('').optional(),
   city: Joi.string().trim().min(2).max(100).required(),
@@ -38,8 +38,8 @@ export const updateAddressSchema = Joi.object({
   recipientName: Joi.string().trim().min(2).max(100),
   phone: Joi.string()
     .trim()
-    .pattern(/^[0-9]{10}$/)
-    .messages({ 'string.pattern.base': 'Phone number must be exactly 10 digits' }),
+    .pattern(/^\+[1-9]\d{6,14}$/)
+    .messages({ 'string.pattern.base': 'Phone number must be in international format (e.g. +919876543210)' }),
   addressLine1: Joi.string().trim().min(5).max(200),
   addressLine2: Joi.string().trim().max(200).allow('').optional(),
   city: Joi.string().trim().min(2).max(100),
