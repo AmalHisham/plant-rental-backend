@@ -3,9 +3,9 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import app from '../../app';
-import { Order } from '../order/models/order.model';
-import { Payment } from './models/payment.model';
-import { User } from '../user/models/user.model';
+import { Order } from '../order/order.model';
+import { Payment } from './payment.model';
+import { User } from '../user/user.model';
 
 // ─── Mock Razorpay ────────────────────────────────────────────────────────────
 

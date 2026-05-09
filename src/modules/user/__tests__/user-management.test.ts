@@ -1,7 +1,7 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../../app';
-import { User } from '../models/user.model';
+import { User } from '../user.model';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

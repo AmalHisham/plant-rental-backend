@@ -1,23 +1,18 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
-import { User, UserRole } from '../user/models/user.model';
-import { Plant } from '../plant/models/plant.model';
-import { Order } from '../order/models/order.model';
+import { User, UserRole } from '../user/user.model';
+import { Plant } from '../plant/plant.model';
+import { Order } from '../order/order.model';
 import { AppError } from '../../utils/AppError';
 import { sendAdminWelcomeEmail } from '../user/service/email.service';
 
-// Generates a 12-character alphanumeric temporary password using crypto.randomBytes
-// for cryptographic randomness. The character set is restricted to avoid ambiguous
-// chars (0/O, 1/l) that are hard to read in an email.
 const generateRandomPassword = (): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const bytes = crypto.randomBytes(12);
-  // Map each byte to a character using modulo — slightly biased toward lower indices
-  // but negligible for a temporary password that gets changed immediately.
-  return Array.from(bytes)
-    .map((b) => chars[b % chars.length])
-    .join('');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'; // allowed characters for the password
+  const bytes = crypto.randomBytes(12); // generate 12 random bytes (one byte will become one character)
+  return Array.from(bytes) // convert bytes into a normal array so we can use .map()
+    .map((b) => chars[b % chars.length]) // convert each byte to a character — b % chars.length gives a valid index
+    .join(''); // join all characters into a single password string
 };
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────

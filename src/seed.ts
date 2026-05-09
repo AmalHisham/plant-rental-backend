@@ -9,7 +9,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
-import { Plant } from './modules/plant/models/plant.model';
+import { Plant } from './modules/plant/plant.model';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 

@@ -1,6 +1,6 @@
-import { Plant } from '../plant/models/plant.model';
-import { Cart } from '../cart/models/cart.model';
-import { Order, IOrder } from './models/order.model';
+import { Plant } from '../plant/plant.model';
+import { Cart } from '../cart/cart.model';
+import { Order, IOrder } from './order.model';
 import { AppError } from '../../utils/AppError';
 import mongoose from 'mongoose';
 

@@ -4,7 +4,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { User, IUser } from '../models/user.model';
+import { User, IUser } from '../user.model';
 import { sendPasswordResetEmail } from './email.service';
 import { AppError } from '../../../utils/AppError';
 

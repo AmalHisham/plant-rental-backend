@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { Wishlist } from './models/wishlist.model';
-import { Plant } from '../plant/models/plant.model';
+import { Wishlist } from './wishlist.model';
+import { Plant } from '../plant/plant.model';
 import { AppError } from '../../utils/AppError';
 
 // Only the fields needed to render a wishlist card are fetched —

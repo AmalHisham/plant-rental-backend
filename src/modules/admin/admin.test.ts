@@ -2,9 +2,9 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import app from '../../app';
-import { User } from '../user/models/user.model';
-import { Plant } from '../plant/models/plant.model';
-import { Order } from '../order/models/order.model';
+import { User } from '../user/user.model';
+import { Plant } from '../plant/plant.model';
+import { Order } from '../order/order.model';
 
 // Mock email service to prevent real emails during tests
 jest.mock('../user/service/email.service', () => ({

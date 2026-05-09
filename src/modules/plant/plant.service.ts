@@ -1,7 +1,7 @@
 import { UploadApiResponse } from 'cloudinary';
 import cloudinary from '../../utils/cloudinary';
 import { AppError } from '../../utils/AppError';
-import { Plant, IPlant } from './models/plant.model';
+import { Plant, IPlant } from './plant.model';
 
 // PlantFilters defines the shape of query parameters accepted by the list endpoint.
 // Every field is optional — the controller populates this from req.query after Joi validation.

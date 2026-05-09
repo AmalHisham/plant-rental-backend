@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import app from '../../../app';
-import { User } from '../../user/models/user.model';
-import { Address } from '../models/address.model';
+import { User } from '../../user/user.model';
+import { Address } from '../address.model';
 
 // ─── Shared state ─────────────────────────────────────────────────────────────
 

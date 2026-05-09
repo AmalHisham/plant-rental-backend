@@ -2,9 +2,9 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import app from '../../app';
-import { Cart } from './models/cart.model';
-import { Plant } from '../plant/models/plant.model';
-import { User } from '../user/models/user.model';
+import { Cart } from './cart.model';
+import { Plant } from '../plant/plant.model';
+import { User } from '../user/user.model';
 
 // ─── Shared state ─────────────────────────────────────────────────────────────
 

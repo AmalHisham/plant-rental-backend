@@ -1,9 +1,9 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import { Order } from '../order/models/order.model';
-import { Plant } from '../plant/models/plant.model';
-import { Payment, IPayment } from './models/payment.model';
+import { Order } from '../order/order.model';
+import { Plant } from '../plant/plant.model';
+import { Payment, IPayment } from './payment.model';
 import { AppError } from '../../utils/AppError';
 
 // getRazorpay() is a factory function rather than a module-level singleton so that

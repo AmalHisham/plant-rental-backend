@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import { User, IUser } from '../user/models/user.model';
-import { Address, IAddress } from './models/address.model';
+import { User, IUser } from '../user/user.model';
+import { Address, IAddress } from './address.model';
 import { AppError } from '../../utils/AppError';
 
 // Fields excluded from all profile responses — never expose to the client.

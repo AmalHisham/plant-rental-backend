@@ -2,8 +2,8 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import app from '../../app';
-import { Plant } from './models/plant.model';
-import { User } from '../user/models/user.model';
+import { Plant } from './plant.model';
+import { User } from '../user/user.model';
 
 const BASE = '/api/plants';
 

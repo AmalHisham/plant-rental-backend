@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { Cart } from './models/cart.model';
-import { Plant, IPlant } from '../plant/models/plant.model';
+import { Cart } from './cart.model';
+import { Plant, IPlant } from '../plant/plant.model';
 import { AppError } from '../../utils/AppError';
 
 // ─── Types ────────────────────────────────────────────────────────────────────

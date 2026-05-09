@@ -2,7 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import app from '../../../app';
-import { User } from '../models/user.model';
+import { User } from '../user.model';
 import { sendPasswordResetEmail } from '../service/email.service';
 
 // The auth tests focus on API behavior, so email delivery is stubbed out.
