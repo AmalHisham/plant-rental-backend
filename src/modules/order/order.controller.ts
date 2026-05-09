@@ -16,6 +16,7 @@ import {
   updateDepositSchema,
   checkoutSchema,
   orderParamsSchema,
+  myOrdersQuerySchema,
 } from './order.validation';
 
 // ─── Handlers ────────────────────────────────────────────────────────────────
@@ -32,8 +33,13 @@ export const createOrderHandler = async (req: AuthRequest, res: Response): Promi
 };
 
 export const getMyOrdersHandler = async (req: AuthRequest, res: Response): Promise<void> => {
-  const orders = await getOrdersByUser(req.user!.id);
-  res.status(200).json({ success: true, data: orders });
+  const { error, value } = myOrdersQuerySchema.validate(req.query, { convert: true });
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const result = await getOrdersByUser(req.user!.id, value.page, value.limit);
+  res.status(200).json({ success: true, data: result.orders, pagination: { page: result.page, totalPages: result.totalPages, total: result.total } });
 };
 
 export const updateStatusHandler = async (req: AuthRequest, res: Response): Promise<void> => {

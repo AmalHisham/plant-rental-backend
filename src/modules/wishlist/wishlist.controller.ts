@@ -1,11 +1,16 @@
 import { Response } from 'express';
 import { AuthRequest } from '../../middlewares/auth.middleware';
 import { getWishlist, addToWishlist, removeFromWishlist } from './wishlist.service';
-import { plantIdParamsSchema } from './wishlist.validation';
+import { plantIdParamsSchema, wishlistQuerySchema } from './wishlist.validation';
 
 export const getWishlistHandler = async (req: AuthRequest, res: Response): Promise<void> => {
-  const wishlist = await getWishlist(req.user!.id);
-  res.status(200).json({ success: true, data: { wishlist } });
+  const { error, value } = wishlistQuerySchema.validate(req.query, { convert: true });
+  if (error) {
+    res.status(400).json({ success: false, message: error.details[0].message });
+    return;
+  }
+  const result = await getWishlist(req.user!.id, value.page, value.limit);
+  res.status(200).json({ success: true, data: result.wishlist, pagination: result.pagination });
 };
 
 export const addToWishlistHandler = async (req: AuthRequest, res: Response): Promise<void> => {

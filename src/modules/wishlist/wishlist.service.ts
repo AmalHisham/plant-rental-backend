@@ -10,14 +10,24 @@ const PLANT_POPULATE_SELECT =
 
 // ─── Get Wishlist ─────────────────────────────────────────────────────────────
 
-export const getWishlist = async (userId: string) => {
+export const getWishlist = async (userId: string, page: number, limit: number) => {
   const wishlist = await Wishlist.findOne({ userId }).populate(
     'plants.plantId',
     PLANT_POPULATE_SELECT
   );
+
   // Return a consistent empty structure rather than null so the frontend doesn't
   // need to guard against a missing wishlist on first use.
-  return wishlist ?? { userId, plants: [] };
+  const allPlants = wishlist?.plants ?? [];
+  const total = allPlants.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const skip = (page - 1) * limit;
+  const plants = allPlants.slice(skip, skip + limit);
+
+  return {
+    wishlist: { userId, plants },
+    pagination: { page, totalPages, total },
+  };
 };
 
 // ─── Add To Wishlist ──────────────────────────────────────────────────────────

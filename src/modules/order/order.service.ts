@@ -67,10 +67,21 @@ export const createOrder = async (input: CreateOrderInput): Promise<IOrder> => {
 
 // ─── Get Orders by User ───────────────────────────────────────────────────────
 
-export const getOrdersByUser = async (userId: string): Promise<IOrder[]> => {
-  return Order.find({ userId, isDeleted: false })
-    .populate('plants.plantId', 'name category images pricePerDay depositAmount')
-    .sort({ createdAt: -1 });
+export const getOrdersByUser = async (
+  userId: string,
+  page: number,
+  limit: number
+): Promise<{ orders: IOrder[]; total: number; totalPages: number; page: number }> => {
+  const skip = (page - 1) * limit;
+  const [orders, total] = await Promise.all([
+    Order.find({ userId, isDeleted: false })
+      .populate('plants.plantId', 'name category images pricePerDay depositAmount')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Order.countDocuments({ userId, isDeleted: false }),
+  ]);
+  return { orders, total, totalPages: Math.ceil(total / limit), page };
 };
 
 // ─── Get Order By ID ──────────────────────────────────────────────────────────
