@@ -1,6 +1,7 @@
 import { UploadApiResponse } from 'cloudinary';
 import cloudinary from '../../utils/cloudinary';
 import { AppError } from '../../utils/AppError';
+import { MAX_PLANT_IMAGES } from '../../config/constants';
 import { Plant, IPlant } from './plant.model';
 
 // PlantFilters defines the shape of query parameters accepted by the list endpoint.
@@ -112,9 +113,8 @@ export const uploadPlantImages = async (
   const plant = await Plant.findOne({ _id: id, isDeleted: false });
   if (!plant) throw new AppError('Plant not found', 404);
 
-  const MAX_IMAGES = 10;
-  const slots = MAX_IMAGES - plant.images.length;
-  if (slots <= 0) throw new AppError('Plant already has the maximum of 10 images', 400);
+  const slots = MAX_PLANT_IMAGES - plant.images.length;
+  if (slots <= 0) throw new AppError(`Plant already has the maximum of ${MAX_PLANT_IMAGES} images`, 400);
   if (buffers.length > slots)
     throw new AppError(`Only ${slots} more image(s) can be added to this plant`, 400);
 
