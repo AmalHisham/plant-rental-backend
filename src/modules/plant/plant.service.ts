@@ -15,6 +15,8 @@ export interface PlantFilters {
   search?: string;
   page?: number;
   limit?: number;
+  sortBy?: 'name' | 'pricePerDay' | 'depositAmount' | 'stock' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 // ─── Get All (with filters + pagination) ────────────────────────────────────
@@ -29,6 +31,8 @@ export const getAllPlants = async (filters: PlantFilters) => {
     search,
     page = 1,
     limit = 12,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
   } = filters;
 
   // Start with the mandatory soft-delete filter; add optional filters only when provided
@@ -54,9 +58,11 @@ export const getAllPlants = async (filters: PlantFilters) => {
 
   const skip = (page - 1) * limit;
 
+  const sortDirection = sortOrder === 'asc' ? 1 : -1;
+
   // Run find + countDocuments in parallel to avoid two sequential round-trips.
   const [plants, total] = await Promise.all([
-    Plant.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }),
+    Plant.find(query).skip(skip).limit(limit).sort({ [sortBy]: sortDirection }),
     Plant.countDocuments(query),
   ]);
 
