@@ -2,7 +2,7 @@ import { UploadApiResponse } from 'cloudinary';
 import cloudinary from '../../utils/cloudinary';
 import { AppError } from '../../utils/AppError';
 import { MAX_PLANT_IMAGES } from '../../config/constants';
-import { Plant, IPlant } from './plant.model';
+import { Plant, IPlant, IPlantImage } from './plant.model';
 
 // PlantFilters defines the shape of query parameters accepted by the list endpoint.
 // Every field is optional — the controller populates this from req.query after Joi validation.
@@ -125,15 +125,31 @@ export const uploadPlantImages = async (
     throw new AppError(`Only ${slots} more image(s) can be added to this plant`, 400);
 
   // Upload all buffers in parallel — each buffer is piped into a Cloudinary upload_stream.
-  const urls = await Promise.all(
+  const uploadedImages = await Promise.all(
     buffers.map(
       (buf) =>
-        new Promise<string>((resolve, reject) => {
+        new Promise<IPlantImage>((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             { folder: 'plant-rental/plants', resource_type: 'image' },
             (err, result: UploadApiResponse | undefined) => {
               if (err || !result) return reject(err ?? new Error('Cloudinary upload failed'));
-              resolve(result.secure_url);
+              resolve({
+                thumb: cloudinary.url(result.public_id, {
+                  width: 300,
+                  crop: 'fill',
+                  quality: 'auto',
+                  fetch_format: 'auto',
+                  secure: true,
+                }),
+                medium: cloudinary.url(result.public_id, {
+                  width: 900,
+                  crop: 'limit',
+                  quality: 'auto',
+                  fetch_format: 'auto',
+                  secure: true,
+                }),
+                original: result.secure_url,
+              });
             }
           );
           stream.end(buf);
@@ -141,7 +157,7 @@ export const uploadPlantImages = async (
     )
   );
 
-  plant.images.push(...urls);
+  plant.images.push(...uploadedImages);
   await plant.save();
   return plant;
 };
@@ -154,12 +170,13 @@ export const deletePlantImage = async (id: string, imageUrl: string): Promise<IP
   const plant = await Plant.findOne({ _id: id, isDeleted: false });
   if (!plant) throw new AppError('Plant not found', 404);
 
-  if (!plant.images.includes(imageUrl))
+  const imageToDelete = plant.images.find((img) => img.original === imageUrl);
+  if (!imageToDelete)
     throw new AppError('Image not found on this plant', 404);
 
   // Cloudinary public_id is the path segment between the upload root and the file
   // extension, e.g. "plant-rental/plants/abc123" from a full secure_url.
-  const urlParts = imageUrl.split('/');
+  const urlParts = imageToDelete.original.split('/');
   const fileWithExt = urlParts[urlParts.length - 1];
   const fileName = fileWithExt.split('.')[0];
   const folder = urlParts.slice(urlParts.indexOf('plant-rental')).slice(0, -1).join('/');
@@ -167,7 +184,7 @@ export const deletePlantImage = async (id: string, imageUrl: string): Promise<IP
 
   await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
 
-  plant.images = plant.images.filter((img) => img !== imageUrl);
+  plant.images = plant.images.filter((img) => img.original !== imageUrl);
   await plant.save();
   return plant;
 };

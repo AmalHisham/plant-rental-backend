@@ -1,5 +1,11 @@
 import Joi from 'joi';
 
+const plantImageSchema = Joi.object({
+  thumb: Joi.string().uri().required(),
+  medium: Joi.string().uri().required(),
+  original: Joi.string().uri().required(),
+});
+
 export const createPlantSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required(),
   category: Joi.string().trim().min(2).max(50).required(),
@@ -8,7 +14,7 @@ export const createPlantSchema = Joi.object({
   depositAmount: Joi.number().min(0).required(),
   stock: Joi.number().integer().min(0).required(),
   careLevel: Joi.string().valid('easy', 'medium', 'hard').required(),
-  images: Joi.array().items(Joi.string().uri()).default([]),
+  images: Joi.array().items(plantImageSchema).default([]),
   isAvailable: Joi.boolean().default(true),
 }).required();
 
@@ -22,7 +28,7 @@ export const updatePlantSchema = Joi.object({
   depositAmount: Joi.number().min(0),
   stock: Joi.number().integer().min(0),
   careLevel: Joi.string().valid('easy', 'medium', 'hard'),
-  images: Joi.array().items(Joi.string().uri()),
+  images: Joi.array().items(plantImageSchema),
   isAvailable: Joi.boolean(),
 }).min(1).required();
 

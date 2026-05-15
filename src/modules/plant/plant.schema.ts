@@ -1,5 +1,14 @@
 import { Schema } from 'mongoose';
 
+const plantImageSchema = new Schema(
+  {
+    thumb: { type: String, required: true, trim: true },
+    medium: { type: String, required: true, trim: true },
+    original: { type: String, required: true, trim: true },
+  },
+  { _id: false }
+);
+
 export const plantSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -13,7 +22,7 @@ export const plantSchema = new Schema(
 
     stock: { type: Number, required: true, min: 0, default: 0 },
     careLevel: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
-    images: [{ type: String }], // array of image URLs; empty for seeded plants
+    images: [plantImageSchema],
     isAvailable: { type: Boolean, default: true },
 
     // isDeleted supports soft delete — orders placed on a deleted plant still resolve
